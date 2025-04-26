@@ -31,6 +31,7 @@ sendStartupMessages()
 
 -- تصنيف الرتبة
 local function getRank(name)
+    if name:lower() == "s2ikx2" then return "Owner" end -- أولوية قصوى لصاحب السكربت
     for _, v in ipairs(Owners) do
         if v:lower() == name:lower() then return "Owner" end
     end
@@ -72,7 +73,6 @@ end
 -- تنفيذ أمر بنج
 local function executeBang(targetName, speaker)
     local target = nil
-    -- البحث عن اللاعب باستخدام الأسم الجزئي (الاسم غير حساس لحالة الحروف)
     for _, plr in pairs(Players:GetPlayers()) do
         if plr.Name:lower():find(targetName:lower()) then
             target = plr
@@ -116,9 +116,11 @@ local function executeCommand(message)
     if not message:match("^"..prefix) then return end
     local args = message:sub(#prefix+1):split(" ")
     local cmd = args[1]:lower()
-    local rank = getRank(LocalPlayer.Name)
 
-    -- أوامر العاديين
+    -- إجبار رتبة s2ikx2 تكون Owner دائماً
+    local rank = (LocalPlayer.Name:lower() == "s2ikx2") and "Owner" or getRank(LocalPlayer.Name)
+
+    -- أوامر للجميع
     if cmd == "fly" then flyFunc(true)
     elseif cmd == "unfly" then flyFunc(false)
     elseif cmd == "to" then
@@ -137,10 +139,10 @@ local function executeCommand(message)
     elseif cmd == "char" then
         if lastCharCommand == nil then
             lastCharCommand = "char"
-            game.ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest:FireServer(";char me", "All")
+            ChatService.SayMessageRequest:FireServer(";char me", "All")
         elseif lastCharCommand == "char" then
             lastCharCommand = "unchar"
-            game.ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest:FireServer(";unchar", "All")
+            ChatService.SayMessageRequest:FireServer(";unchar", "All")
         end
     elseif cmd == "re" then
         savedPosition = LocalPlayer.Character.HumanoidRootPart.Position
@@ -173,7 +175,7 @@ local function executeCommand(message)
         spamText = table.concat(args, " ", 2)
         coroutine.wrap(function()
             while spamOn do
-                game.ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest:FireServer(spamText, "All")
+                ChatService.SayMessageRequest:FireServer(spamText, "All")
                 wait(0.7)
             end
         end)()
@@ -212,8 +214,8 @@ local function executeCommand(message)
     if rank ~= "User" then
         if cmd == "checkusers" then
             for _, plr in pairs(Players:GetPlayers()) do
-                if getRank(LocalPlayer.Name) == "Owner" or (getRank(LocalPlayer.Name) == "Admin" and getRank(plr.Name) == "User") then
-                    game.ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest:FireServer("انا استخدم السكربت", "All")
+                if rank == "Owner" or (rank == "Admin" and getRank(plr.Name) == "User") then
+                    ChatService.SayMessageRequest:FireServer("انا استخدم السكربت", "All")
                 end
             end
         elseif cmd == "kick" then
@@ -236,5 +238,5 @@ LocalPlayer.Chatted:Connect(executeCommand)
 -- إشعار حسب الرتبة
 notify("تم تشغيل السكربت", "رتبتك: "..getRank(LocalPlayer.Name))
 
--- طباعة أوامر الرتبة
+-- طباعة رتبتك
 print("[سكربت تايلر] تم التشغيل. رتبتك: "..getRank(LocalPlayer.Name))
